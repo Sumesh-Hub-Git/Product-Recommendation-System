@@ -119,10 +119,6 @@ The notebook evaluates a product-average rating baseline:
                           error is expressed in   
                           rating units            
 
-  **MAE**                 Mean absolute           Lower is better
-                          difference between      
-                          actual and predicted    
-                          ratings                 
   -----------------------------------------------------------------------
 
 MSE and RMSE measure rating-prediction accuracy. They do not directly
