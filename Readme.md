@@ -75,6 +75,12 @@ The notebook downloads the Amazon Product Reviews dataset using
 [`kagglehub`](https://github.com/Kaggle/kagglehub) and reads the
 Electronics ratings CSV.
 
+Link : https://www.kaggle.com/saurav9786/amazon-product-reviews?fbclid=IwAR26xfJJK1c5zEeXh8yK9tTgDZrXSkdZIIfjGOhnegCobgskrUEYFcky_cw
+
+The dataset here is taken from the below website.
+
+Source - Amazon Reviews data (http://jmcauley.ucsd.edu/data/amazon/) The repository has several datasets. For this case study, we are using the Electronics dataset.
+
 The notebook then:
 
 -   Assigns the columns `userId`, `productId`, `rating`, and
