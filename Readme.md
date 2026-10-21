@@ -64,29 +64,56 @@ The dataset here is taken from the below website.
 
 Source - Amazon Reviews data (http://jmcauley.ucsd.edu/data/amazon/) The repository has several datasets. For this case study, we are using the Electronics dataset.
 
-The notebooks use the Electronics ratings CSV with the columns `userId`, `productId`, `rating`, and `timestamp`. The timestamp is removed for the recommendation analysis. They inspect data types, missing values, dataset dimensions, rating distributions, and product popularity; remove duplicate records; and retain users with at least 10 ratings in the selected subset.
+The notebook then:
 
-The notebooks use different-sized initial subsets:
+-   Assigns the columns `userId`, `productId`, `rating`, and
+    `timestamp`.
+-   Inspects data types, missing values, and dataset dimensions.
+-   Removes the timestamp column for the recommendation analysis.
+-   Uses the first 1,000,000 rows as a smaller working subset.
+-   Removes duplicate records.
+-   Keeps users with at least 10 ratings.
+-   Examines rating distributions and product popularity.
+-   Creates a user--product pivot matrix, filling missing entries with
+    `0` for matrix exploration.
+-   Splits the filtered interactions into training and test sets using a
+    70:30 split (`random_state=42`).
 
-- **Popularity notebook:** first 1,000,000 rows.
-- **Preference notebook:** first 3,000,000 rows.
+**Important:** A missing rating is not the same as a real rating of
+zero. When evaluating rating-prediction models, calculate errors only
+for known ratings in the held-out test set, not for the zeros used to
+represent missing entries in the pivot matrix.
 
-Both notebooks split their filtered data into training and test sets using a 70:30 split with `random_state=42`.
+## Evaluation
 
-A user–product pivot matrix is also created for exploratory analysis, with missing entries filled with `0`. In that matrix, zero represents a missing rating, not an actual zero-star rating. The recommendation functions build their own training-based matrices.
+The notebook evaluates a product-average rating baseline:
 
-## Evaluation Metrics
+-   For each product, calculate its mean rating using the training data.
+-   For a test interaction, predict that product's training-set mean.
+-   If a product does not appear in the training data, use the global
+    mean rating from the training data as a fallback.
+-   Compare predictions with the actual test ratings.
 
-Both notebooks use MSE and RMSE to evaluate rating-prediction accuracy.
+### Metrics
 
-| Metric | Meaning | Preferred result |
-|---|---|---|
-| **MSE (Mean Squared Error)** | Average of squared differences between actual and predicted ratings. | Lower is better. |
-| **RMSE (Root Mean Squared Error)** | Square root of MSE, expressed in rating units. | Lower is better. |
+  -----------------------------------------------------------------------
+  Metric                  Description             Preferred direction
+  ----------------------- ----------------------- -----------------------
+  **MSE**                 Mean of squared         Lower is better
+                          differences between     
+                          actual and predicted    
+                          ratings                 
 
-The metrics measure how accurately ratings are predicted; they do not directly measure the relevance of the top-N recommendation list. Metrics such as Precision@K, Recall@K, or NDCG@K could be added for top-N evaluation.
+  **RMSE**                Square root of MSE;     Lower is better
+                          error is expressed in   
+                          rating units            
 
-**Comparison note:** The notebooks use different initial subset sizes, so their reported scores should not automatically be treated as a strict apples-to-apples comparison. For a controlled comparison, use the same data subset and eligible test interactions for both methods.
+  -----------------------------------------------------------------------
+
+MSE and RMSE measure rating-prediction accuracy. They do not directly
+measure whether the top recommended products are relevant. For top-N
+recommendation quality, consider metrics such as **Precision@K**,
+**Recall@K**, and **NDCG@K**.
 
 ## Requirements
 
@@ -109,9 +136,9 @@ Some imports, including Surprise/SVD-related classes, are present even though th
 
 ### 1. Clone the repository
 
-```bash
-git clone <your-repository-url>
-cd <your-repository-folder>
+``` bash
+git clone https://github.com/Sumesh-Hub-Git/Product-Recommendation-System.git
+cd Sumesh-Hub-Git/Product-Recommendation-System
 ```
 
 Replace the placeholders with your repository URL and folder name.
