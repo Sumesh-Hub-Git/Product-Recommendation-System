@@ -10,7 +10,7 @@ Both notebooks evaluate rating-prediction performance using Mean Squared Error (
 ## Project Files
 
 - `popularity-based-product-recommendation-system.ipynb` — popularity-based recommendations and a product-average rating prediction baseline.
-- `preference-based-product-recommendation-system(3).ipynb` — personalized recommendations using user-based collaborative filtering and cosine similarity.
+- `preference-based-product-recommendation-system.ipynb` — personalized recommendations using user-based collaborative filtering and cosine similarity.
 - `README.md` — project description and setup instructions.
 
 ## 1. Popularity-Based Recommendation
