@@ -151,7 +151,7 @@ The notebook uses Python and common data-science libraries, including:
 ### 1. Clone the repository
 
 ``` bash
-git clone <your-repository-url>
+git clone https://github.com/Sumesh-Hub-Git/Product-Recommendation-System.git
 cd <your-repository-folder>
 ```
 
