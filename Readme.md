@@ -1,119 +1,104 @@
 # Product Recommendation System
 
-A Python-based product recommendation project using Amazon Electronics user-rating data. The project contains two Jupyter notebooks that explore the dataset and implement two recommendation approaches:
+A Python-based product recommendation project using Amazon Electronics user-rating data. The project explores popularity-based ranking and two personalized collaborative-filtering approaches: user-based collaborative filtering and matrix factorization with SVD/SVD++.
 
-1. **Popularity-Based Recommendation** — ranks products using rating frequency and average ratings.
-2. **Preference-Based Recommendation** — uses user-based collaborative filtering with cosine similarity to recommend products based on the ratings of similar users.
+## Project approaches
 
-Both notebooks evaluate rating-prediction performance using Mean Squared Error (MSE) and Root Mean Squared Error (RMSE).
+1. **Popularity-based recommendation** — ranks products using rating frequency and average rating. This provides a non-personalized baseline.
+2. **Preference-based recommendation** — uses user-based collaborative filtering and cosine similarity to find similar users, then predicts ratings using a similarity-weighted average.
+3. **Preference-based SVD** — learns latent user and product factors from ratings, predicts ratings for unrated products, and ranks the predictions. SVD++ is also evaluated for comparison.
 
-## Project Files
+## Project files
 
-- `popularity-based-product-recommendation-system.ipynb` — popularity-based recommendations and a product-average rating prediction baseline.
-- `preference-based-product-recommendation-system.ipynb` — personalized recommendations using user-based collaborative filtering and cosine similarity.
-- `README.md` — project description and setup instructions.
+- `popularity-based-product-recommendation-system(1).ipynb` — popularity-based recommendations and product-average rating baseline.
+- `preference-based-product-recommendation-system(4).ipynb` — user-based collaborative filtering with cosine similarity.
+- `preference-based-SVD-product-recommendation-system.ipynb` — SVD/SVD++ experiments, hyperparameter search, and SVD recommendations.
+- `preference-based.md` — explanation of the user-based collaborative-filtering experiment and what was learned.
+- `preference-based-SVD.md` — explanation of SVD/SVD++ experiments and what was learned.
+- `README.md` — project overview, setup, results, and limitations.
 
-## 1. Popularity-Based Recommendation
+## 1. Popularity-based recommendation
 
-The popularity notebook implements a `recommend(train_data, user_id)` function. It:
+The popularity notebook ranks products using the number of ratings and their average ratings. It selects the 50 most frequently rated products, sorts them by average rating, and returns up to 10 recommendations.
 
-1. Counts the number of ratings recorded for each product in the training data.
-2. Calculates each product's average rating.
-3. Selects the 50 most frequently rated products.
-4. Sorts those products by average rating and returns up to 10 recommendations.
-5. Adds the requested user ID to the output.
+This is a **non-personalized baseline**: the requested user ID labels the output but does not change the product ranking, so users generally receive the same recommendations.
 
-This is a **non-personalized baseline**: the requested user ID labels the results, but it does not affect the product ranking. Users therefore generally receive the same product recommendations.
+The notebook also evaluates a product-average rating baseline. It predicts a test rating using the product's average rating from the training data, falling back to the training-set global average if the product was not present in training data.
 
-The notebook also evaluates a product-average rating baseline. It predicts a test rating using the product's average rating in the training data, falling back to the training-set global average if the product was not present in training data.
+## 2. Preference-based recommendation: user-based collaborative filtering
 
-## 2. Preference-Based Recommendation Using User-Based Collaborative Filtering
+The preference notebook uses the first 3,000,000 rows of the dataset as its working subset, removes duplicates, and keeps users with at least 10 ratings. It splits the filtered interactions into training and test sets with a 70:30 split (`random_state=42`).
 
-The preference notebook implements `preference_based_recommendation(train_data, user_id, num_recommendations=5, k=20)`. It personalizes recommendations using user rating patterns:
+The `preference_based_recommendation(train_data, user_id, num_recommendations=5, k=20)` function:
 
-1. Builds a user–product rating matrix from **training data only**.
-2. Calculates cosine similarity between the target user and the users in the matrix.
-3. Selects up to 20 other users with the highest positive similarity scores.
-4. Finds products that the target user has not rated but at least one selected similar user has rated.
-5. Predicts a rating for each candidate product using a similarity-weighted average of the selected users' ratings for that product.
-6. Sorts candidates by predicted rating and returns the requested number of recommendations.
+1. Builds a user–product rating matrix from training data.
+2. Calculates cosine similarity between the target user and other users.
+3. Selects up to 20 other users with positive similarity.
+4. Finds products the target user has not rated but at least one selected similar user has rated.
+5. Predicts each candidate rating using a similarity-weighted average of neighbor ratings.
+6. Ranks candidates by predicted rating and returns the requested number.
 
-The recommendation output contains:
+The output contains `productId`, `predicted_rating`, and `similar_users_count`.
 
-- `productId` — the recommended product identifier.
-- `predicted_rating` — the model's similarity-weighted predicted rating.
-- `similar_users_count` — the number of selected similar users who rated that product.
+### Evaluation
 
-The notebook demonstrates recommendations for three sampled users. Since the candidate products and rating weights depend on the target user's nearest neighbors, different users can receive different recommendations.
+The notebook predicts eligible ratings from the held-out test set using similar users and reports the number of evaluated ratings, MSE, and RMSE. Rows are skipped if the user or product is absent from the training matrix, no similar users are available, or no selected neighbor rated the product. Similarities are recalculated for each eligible test interaction, so this evaluation can be slow.
 
-### Preference Model Evaluation
+See [preference-based.md](preference-based.md) for the detailed workflow, prediction formula, lessons learned, and limitations.
 
-The notebook evaluates predictions on held-out rows from `test_data`. For each eligible test interaction, it finds the target user's most similar users from the training matrix and predicts the rating from neighbors who rated that product. Rows are skipped when the user or product is not present in the training matrix, when there are no similar users, or when no usable neighbor ratings are available. The notebook reports the number of evaluated ratings and the resulting MSE and RMSE.
+## 3. Preference-based SVD and SVD++
 
-This evaluation may take time on a large dataset because similarities are recalculated for individual test rows.
+The SVD notebook uses the full filtered dataset rather than the smaller first-row subset used by the other two notebooks. It removes duplicate ratings and keeps users with at least 10 ratings, converts the ratings to Surprise's `Dataset` format, and creates a 70:30 train/test split.
 
-## Dataset and Preprocessing
+The experiment trains SVD and SVD++, then evaluates both on the same test set. The recorded RMSE values were:
 
-The notebook downloads the Amazon Product Reviews dataset using
-[`kagglehub`](https://github.com/Kaggle/kagglehub) and reads the
-Electronics ratings CSV.
+| Model | RMSE |
+|---|---:|
+| SVD | 1.0915 |
+| SVD++ | 1.0977 |
 
-Link : https://www.kaggle.com/saurav9786/amazon-product-reviews?fbclid=IwAR26xfJJK1c5zEeXh8yK9tTgDZrXSkdZIIfjGOhnegCobgskrUEYFcky_cw
+Lower RMSE is better. SVD was marginally better in this run, but the difference is small and should not be treated as proof that SVD will always outperform SVD++.
 
-The dataset here is taken from the below website.
+The notebook also uses `GridSearchCV` to explore `n_factors`, `n_epochs`, `lr_all`, and `reg_all` with three-fold cross-validation. `GridSearchCV.fit()` requires a Surprise `Dataset`, not a `Trainset`. The final recommendation function predicts ratings for products the user has not rated, sorts them by estimated rating, and returns the top `n`.
 
-Source - Amazon Reviews data (http://jmcauley.ucsd.edu/data/amazon/) The repository has several datasets. For this case study, we are using the Electronics dataset.
+**Tuning note:** the current notebook's final SVD instance uses fixed settings (`n_factors=50`, `n_epochs=20`) rather than the best parameters returned by the grid search. To apply the tuning result, initialize SVD using `**svd_search.best_params["rmse"]`. For a fair final evaluation, do not use the held-out test set during tuning.
 
-The notebook then:
+See [preference-based-SVD.md](preference-based-SVD.md) for the prediction formula, SVD/SVD++ comparison, tuning details, and lessons learned.
 
--   Assigns the columns `userId`, `productId`, `rating`, and
-    `timestamp`.
--   Inspects data types, missing values, and dataset dimensions.
--   Removes the timestamp column for the recommendation analysis.
--   Uses the first 1,000,000 rows as a smaller working subset.
--   Removes duplicate records.
--   Keeps users with at least 10 ratings.
--   Examines rating distributions and product popularity.
--   Creates a user--product pivot matrix, filling missing entries with
-    `0` for matrix exploration.
--   Splits the filtered interactions into training and test sets using a
-    70:30 split (`random_state=42`).
+## Dataset and preprocessing
 
-**Important:** A missing rating is not the same as a real rating of
-zero. When evaluating rating-prediction models, calculate errors only
-for known ratings in the held-out test set, not for the zeros used to
-represent missing entries in the pivot matrix.
+The notebooks download the Amazon Product Reviews dataset through [`kagglehub`](https://github.com/Kaggle/kagglehub) and read the Electronics ratings CSV.
 
-## Evaluation
+- Kaggle dataset: https://www.kaggle.com/datasets/saurav9786/amazon-product-reviews
+- Original Amazon Reviews data: http://jmcauley.ucsd.edu/data/amazon/
 
-The notebook evaluates a product-average rating baseline:
+The data is represented by `userId`, `productId`, `rating`, and `timestamp`. The timestamp is removed for the recommendation experiments. Duplicate rows are removed, and users with fewer than 10 ratings are filtered out.
 
--   For each product, calculate its mean rating using the training data.
--   For a test interaction, predict that product's training-set mean.
--   If a product does not appear in the training data, use the global
-    mean rating from the training data as a fallback.
--   Compare predictions with the actual test ratings.
+The popularity notebook uses the first 1,000,000 rows as a working subset; the user-based preference notebook uses the first 3,000,000 rows; the SVD notebook uses the full filtered dataset. Because the datasets differ in size, the reported experiments are not a perfectly controlled head-to-head comparison.
 
-### Metrics
+A user–product pivot matrix is also used for analysis, with missing entries filled with `0`. **A missing rating is not an actual rating of zero.** Evaluation should calculate errors only on known ratings in the held-out test data.
 
-  -----------------------------------------------------------------------
-  Metric                  Description             Preferred direction
-  ----------------------- ----------------------- -----------------------
-  **MSE**                 Mean of squared         Lower is better
-                          differences between     
-                          actual and predicted    
-                          ratings                 
+## Evaluation metrics
 
-  **RMSE**                Square root of MSE;     Lower is better
-                          error is expressed in   
-                          rating units            
+| Metric | What it measures | Preferred direction |
+|---|---|---|
+| **MSE** | Mean squared difference between actual and predicted ratings | Lower |
+| **RMSE** | Square root of MSE, expressed in rating units | Lower |
+| **Precision@K** | Fraction of the top-K recommended products that are relevant | Higher |
+| **Recall@K** | Fraction of relevant products found in the top-K list | Higher |
+| **NDCG@K** | Ranking quality that rewards relevant products appearing higher in the list | Higher |
 
-  -----------------------------------------------------------------------
+MSE and RMSE measure rating-prediction accuracy; they do not directly measure top-N recommendation quality. Precision@K, Recall@K, and NDCG@K are useful additional ranking metrics. Their relevance threshold and candidate-item evaluation setup should be defined consistently across models.
 
-MSE and RMSE measure rating-prediction accuracy. They do not directly
-measure whether the top recommended products are relevant. For top-N
-recommendation quality, consider metrics such as **Precision@K**,
-**Recall@K**, and **NDCG@K**.
+## What we have learned so far
+
+- **Popularity-based recommendations** provide a simple baseline but are not personalized.
+- **User-based collaborative filtering** personalizes results by identifying similar users and weighting their ratings by similarity.
+- **SVD** learns latent representations of users and products to predict missing ratings; those predictions can be ranked to produce recommendations.
+- **SVD++** adds an implicit-feedback signal from a user's rated-product history, but it did not improve RMSE in the recorded experiment.
+- **RMSE and top-N metrics answer different questions.** A model with lower rating error is not necessarily the model with the best top-10 ranking.
+- **Evaluation design matters.** Compare methods on the same filtered data and test interactions where possible, tune only on training data, and reserve the test set for final evaluation.
+- **Missing ratings must remain distinct from true ratings.** Zeros used to fill a pivot matrix are placeholders, not observed preferences.
 
 ## Requirements
 
@@ -127,21 +112,19 @@ The notebooks use Python and the following main libraries:
 - SciPy
 - joblib
 - kagglehub
-- scikit-surprise (`surprise`), imported in the notebooks
+- scikit-surprise (`surprise`)
 - Jupyter Notebook
 
-Some imports, including Surprise/SVD-related classes, are present even though the two described recommendation functions do not implement an SVD recommender.
+Depending on Python version and operating system, installing `scikit-surprise` may require compatible build tools or a supported Python environment.
 
 ## Setup
 
 ### 1. Clone the repository
 
-``` bash
+```bash
 git clone https://github.com/Sumesh-Hub-Git/Product-Recommendation-System.git
-cd Sumesh-Hub-Git/Product-Recommendation-System
+cd Product-Recommendation-System
 ```
-
-Replace the placeholders with your repository URL and folder name.
 
 ### 2. Create and activate a virtual environment (recommended)
 
@@ -166,27 +149,24 @@ python -m pip install --upgrade pip
 pip install pandas numpy matplotlib seaborn scikit-learn scipy joblib kagglehub scikit-surprise jupyter
 ```
 
-Depending on your Python version and operating system, installing `scikit-surprise` may require compatible build tools or a supported Python environment.
-
 ### 4. Launch Jupyter
 
 ```bash
 jupyter notebook
 ```
 
-Open either notebook and run its cells in order. The dataset download requires internet access and may require any authentication or permissions requested by Kaggle.
+Open the notebook you want to run and execute its cells in order. Dataset download requires internet access and may require any authentication or permissions requested by Kaggle.
 
-## Limitations and Future Improvements
+## Limitations and future improvements
 
-- The popularity recommender is not personalized; the user ID does not change its ranking.
-- The preference-based method uses cosine similarity and a weighted average of neighbors' ratings; its quality depends on the amount of overlap in users' rating histories.
-- The preference notebook's evaluation can be slow because it recomputes cosine similarities for each eligible test row; caching neighbors would improve performance.
-- The notebooks currently use different initial subset sizes. Use the same subset and test interactions for a fair direct comparison.
-- Consider evaluating top-N relevance with Precision@K, Recall@K, and NDCG@K.
-- Consider sparse-matrix techniques to reduce memory usage for larger datasets.
-- An SVD/SVD++ implementation and evaluation would be a separate extension; importing those libraries alone does not mean those models are implemented.
-- A simple interface could allow users to enter a user ID and view recommendations.
+- Use the same dataset subset and held-out test interactions for a fair comparison between recommendation methods.
+- Apply the best parameters found by `GridSearchCV` to the final SVD model, and keep test data separate from tuning.
+- Add and compare Precision@10, Recall@10, and NDCG@10 for all personalized methods.
+- Cache user similarities in the user-based model to reduce evaluation time.
+- Consider sparse-matrix approaches to reduce memory usage on larger datasets.
+- Test a hybrid recommender combining SVD predictions with content-based signals such as TF-IDF and cosine similarity.
+- Consider a simple interface that accepts a user ID and displays recommended products.
 
 ## Notes
 
-This is an educational recommendation-system project. Results depend on the selected dataset subset, preprocessing, train/test split, and model configuration. The dataset is downloaded separately through `kagglehub` and is not necessarily stored inside the repository.
+This is an educational recommendation-system project. Results depend on dataset preprocessing, data subset, train/test split, model settings, and evaluation procedure. The dataset is downloaded separately through `kagglehub` and is not necessarily stored in the repository.
