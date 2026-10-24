@@ -10,8 +10,8 @@ A Python-based product recommendation project using Amazon Electronics user-rati
 
 ## Project files
 
-- `popularity-based-product-recommendation-system(1).ipynb` — popularity-based recommendations and product-average rating baseline.
-- `preference-based-product-recommendation-system(4).ipynb` — user-based collaborative filtering with cosine similarity.
+- `popularity-based-product-recommendation-system.ipynb` — popularity-based recommendations and product-average rating baseline.
+- `preference-based-product-recommendation-system.ipynb` — user-based collaborative filtering with cosine similarity.
 - `preference-based-SVD-product-recommendation-system.ipynb` — SVD/SVD++ experiments, hyperparameter search, and SVD recommendations.
 - `preference-based.md` — explanation of the user-based collaborative-filtering experiment and what was learned.
 - `preference-based-SVD.md` — explanation of SVD/SVD++ experiments and what was learned.
