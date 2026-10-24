@@ -4,7 +4,7 @@
 
 This experiment builds a personalized recommender using **user-based collaborative filtering**. Instead of recommending the same popular products to everyone, it looks for users whose rating patterns resemble those of the target user and uses their ratings to estimate which unseen products the target user may like.
 
-The implementation is in `preference-based-product-recommendation-system(4).ipynb`.
+The implementation is in `preference-based-product-recommendation-system.ipynb`.
 
 ## What we did
 
